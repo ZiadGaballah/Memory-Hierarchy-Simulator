@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <bitset>
 
 using namespace std;
 
@@ -106,7 +107,7 @@ int main()
 
         // After each access, print the required info
         cout << "Access #" << totalAccesses << ": Address = " << addr << endl;
-        cout << "Index: " << index << ", Tag: " << tag << endl;
+        cout << "Index: " << bitset<5>(index) << ", Tag: " << bitset<5>(tag) << endl;
         if (isHit)
         {
             cout << "Result: HIT" << endl;
