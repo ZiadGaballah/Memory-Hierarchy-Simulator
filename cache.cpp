@@ -11,7 +11,7 @@ using namespace std;
 struct CacheLine
 {
     bool validBit;
-    unsigned long long tag;
+    unsigned int tag;
     CacheLine() : validBit(false), tag(0) {}
 };
 
@@ -63,14 +63,13 @@ int main()
     // Parse the addresses
     stringstream ss(line);
     string addressStr;
-    vector<unsigned long long> addresses;
+    vector<string> addresses;
     while (getline(ss, addressStr, ','))
     {
         // Trim possible spaces
-        if (!addressStr.empty() && addressStr.find_first_not_of(' ') != string::npos)
+       if (!addressStr.empty() && addressStr.find_first_not_of(' ') != string::npos)
         {
-            unsigned long long addr = stoull(addressStr);
-            addresses.push_back(addr);
+            addresses.push_back(addressStr);  // Keep the binary strings as they are
         }
     }
 
@@ -78,14 +77,19 @@ int main()
     int totalAccesses = 0;
     int hits = 0;
     int misses = 0;
+    int blockOffsetBits = log2(L);         // Number of bits to index a byte within a cache line
+    int indexBits = log2(lines);           // Number of bits to index the cache lines
+    int tagBits = memoryBits - indexBits - blockOffsetBits; // Remaining bits are the tag 
 
     // Simulation
-    for (auto addr : addresses)
+    for (auto& addressStr : addresses)
     {
         totalAccesses++;
+        unsigned int addr = bitset<5>(addressStr).to_ulong();  // Convert the binary string to unsigned int
         // Compute index and tag
-        unsigned long long index = (addr / L) % lines;
-        unsigned long long tag = (addr / (lines * (unsigned long long)L));
+        unsigned int blockOffset = addr % L; // Block offset (address % cache line size)
+        unsigned int index = (addr / L) % lines; // Index of cache line
+        unsigned int tag = addr >> (indexBits + blockOffsetBits); // Tag (shift the address to the right)
 
         bool isHit = false;
 
@@ -106,8 +110,8 @@ int main()
         }
 
         // After each access, print the required info
-        cout << "Access #" << totalAccesses << ": Address = " << addr << endl;
-        cout << "Index: " << bitset<5>(index) << ", Tag: " << bitset<5>(tag) << endl;
+        cout << "Access #" << totalAccesses << ": Address = " << bitset<5>(addr) << endl;
+        cout << "Index: " << bitset<5>(index) << ", Tag: " << bitset<5>(tag)  << endl;
         if (isHit)
         {
             cout << "Result: HIT" << endl;
@@ -127,7 +131,7 @@ int main()
     for (int i = 0; i < lines; i++)
     {
         cout << "Line " << i << ": Valid Bit = " << cache[i].validBit
-             << ", Tag = " << cache[i].tag << endl;
+             << ", Tag = " << bitset<5>(cache[i].tag) << endl;
     }
 
     double hitRatio = (totalAccesses > 0) ? (double)hits / totalAccesses : 0.0;
