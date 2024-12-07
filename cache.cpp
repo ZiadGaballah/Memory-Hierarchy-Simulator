@@ -18,15 +18,13 @@ struct CacheLine
 
 int main()
 {
-    // Input parameters
     int memoryBits;
-    int memoryCycles; // Memory access time in cycles
-    int S;            // Total cache size (in bytes)
-    int L;            // Cache line size (in bytes)
-    int cacheCycles;  // Cache access time in cycles
+    int memoryCycles;
+    int S;
+    int L;
+    int cacheCycles;
     string fileName;
 
-    // Prompt the user for all required inputs
     cout << "Enter the number of bits needed to address the memory (16-40): ";
     cin >> memoryBits;
     cout << "Enter the memory access time in cycles (50-200): ";
@@ -40,11 +38,9 @@ int main()
     cout << "Enter the access sequence file name: ";
     cin >> fileName;
 
-    // Compute the number of cache lines
     int lines = S / L;
     vector<CacheLine> cache(lines);
 
-    // Open the file containing the sequence of memory accesses
     ifstream inFile(fileName);
     if (!inFile)
     {
@@ -52,7 +48,6 @@ int main()
         return 1;
     }
 
-    // Read the entire line containing comma-separated addresses
     string line;
     if (!getline(inFile, line))
     {
@@ -61,40 +56,35 @@ int main()
     }
     inFile.close();
 
-    // Parse the addresses
+    // storing the addresses
     stringstream ss(line);
     string addressStr;
-    vector<unsigned long long> addresses; // Store decimal addresses
+    vector<unsigned long long> addresses;
+
     while (getline(ss, addressStr, ','))
     {
-        // Trim possible spaces
         if (!addressStr.empty() && addressStr.find_first_not_of(' ') != string::npos)
         {
-            addresses.push_back(stoi(addressStr)); // Convert string to decimal (unsigned int)
+            addresses.push_back(stoull(addressStr));
         }
     }
-
-    // Simulation variables
     int totalAccesses = 0;
     int hits = 0;
     int misses = 0;
-    int blockOffsetBits = log2(L); // Number of bits to index a byte within a cache line
-    int indexBits = log2(lines);   // Number of bits to index the cache lines
-    // int tagBits = memoryBits - indexBits - blockOffsetBits; // Not used, can be removed
+    int blockOffsetBits = log2(L);
+    int indexBits = log2(lines);
 
-    // Simulation
     for (auto addr : addresses)
     {
         totalAccesses++;
 
         // Compute index and tag
-        unsigned int blockOffset = addr % L;                      // Block offset (address % cache line size)
-        unsigned int index = (addr / L) % lines;                  // Index of cache line
-        unsigned int tag = addr >> (indexBits + blockOffsetBits); // Tag (shift the address to the right)
+        unsigned int blockOffset = addr % L;
+        unsigned int index = (addr / L) % lines;
+        unsigned int tag = addr >> (indexBits + blockOffsetBits);
 
         bool isHit = false;
 
-        // Check the cache line
         if (cache[index].validBit && cache[index].tag == tag)
         {
             isHit = true;
@@ -109,7 +99,6 @@ int main()
 
         int tagBitLength = memoryBits - indexBits - blockOffsetBits;
 
-        // print for each access
         cout << "Access number " << totalAccesses << endl
              << "Decimal Address: " << addr << " (Binary: " << bitset<40>(addr).to_string().substr(40 - memoryBits) << ")" << endl;
         cout << "Displacement:    " << blockOffset
@@ -132,7 +121,6 @@ int main()
         cout << "-------------------------" << endl;
     }
 
-    // final results
     cout << "\nFinal Cache State:\n";
     for (int i = 0; i < lines; i++)
     {
