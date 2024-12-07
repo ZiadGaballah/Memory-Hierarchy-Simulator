@@ -5,6 +5,7 @@
 #include <string>
 #include <cmath>
 #include <bitset>
+#include <iomanip>
 
 using namespace std;
 
@@ -63,13 +64,13 @@ int main()
     // Parse the addresses
     stringstream ss(line);
     string addressStr;
-    vector<string> addresses;
+    vector<unsigned int> addresses; // Store decimal addresses
     while (getline(ss, addressStr, ','))
     {
         // Trim possible spaces
         if (!addressStr.empty() && addressStr.find_first_not_of(' ') != string::npos)
         {
-            addresses.push_back(addressStr);  // Keep the binary strings as they are
+            addresses.push_back(stoi(addressStr)); // Convert string to decimal (unsigned int)
         }
     }
 
@@ -77,26 +78,18 @@ int main()
     int totalAccesses = 0;
     int hits = 0;
     int misses = 0;
-    int blockOffsetBits = log2(L);         // Number of bits to index a byte within a cache line
-    int indexBits = log2(lines) + blockOffsetBits;           // Number of bits to index the cache lines
+    int blockOffsetBits = log2(L); // Number of bits to index a byte within a cache line
+    int indexBits = log2(lines);   // Number of bits to index the cache lines
+    // int tagBits = memoryBits - indexBits - blockOffsetBits; // Not used, can be removed
 
     // Simulation
-    for (auto& addressStr : addresses)
+    for (auto addr : addresses)
     {
         totalAccesses++;
-        
-        // Convert the binary string to unsigned int using memoryBits for bit length
-        unsigned int addr = bitset<40>(addressStr).to_ulong();  // Convert the binary string to unsigned int
-        if (addressStr.length() > memoryBits)
-        {
-            cerr << "Address in the input exceeds the defined memory bits." << endl;
-            return 1;
-        }
-        
+
         // Compute index and tag
-        unsigned int ShiftAddIndex = addr >> blockOffsetBits;
-        unsigned int blockOffset = addr % L; // Block offset (address % cache line size)
-        unsigned int index = (addr / L) % lines; // Index of cache line
+        unsigned int blockOffset = addr % L;                      // Block offset (address % cache line size)
+        unsigned int index = (addr / L) % lines;                  // Index of cache line
         unsigned int tag = addr >> (indexBits + blockOffsetBits); // Tag (shift the address to the right)
 
         bool isHit = false;
@@ -118,8 +111,11 @@ int main()
         }
 
         // After each access, print the required info
-        cout << "Access #:" << totalAccesses << endl << "Address:      " << bitset<40>(addr) << endl;
-        cout <<"Displacement: " << bitset<40>(blockOffset) << endl << "Index:        " << bitset<40>(index) << endl << "Tag:          " << bitset<40>(tag) << endl;
+        cout << "Access #" << totalAccesses << endl
+             << "Decimal Address: " << addr << " (Binary: " << bitset<16>(addr) << ")" << endl;              // Adjust bitset size to memoryBits
+        cout << "Displacement:    " << blockOffset << " (Binary: " << bitset<3>(blockOffset) << ")" << endl; // blockOffsetBits=3
+        cout << "Index:           " << index << " (Binary: " << bitset<2>(index) << ")" << endl;             // indexBits=2
+        cout << "Tag:             " << tag << " (Binary: " << bitset<11>(tag) << ")" << endl;                // tagBits=11
         if (isHit)
         {
             cout << "Result: HIT" << endl;
@@ -139,7 +135,8 @@ int main()
     for (int i = 0; i < lines; i++)
     {
         cout << "Line " << i << ": Valid Bit = " << cache[i].validBit
-             << ", Tag = " << bitset<8>(cache[i].tag) << endl;
+             << ", Tag = " << cache[i].tag
+             << " (Binary: " << bitset<11>(cache[i].tag) << ")" << endl;
     }
 
     double hitRatio = (totalAccesses > 0) ? (double)hits / totalAccesses : 0.0;
